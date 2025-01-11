@@ -1,0 +1,13 @@
+# compiled output
+/dist
+/node_modules
+/build
+
+# Logs
+logs
+
+# dotenv environment variable files
+.env.local
+.env.dev
+.env.prod
+.env.uat
