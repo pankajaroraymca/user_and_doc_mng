@@ -18,6 +18,8 @@ export enum Env {
   JWT_SECRET = 'JWT_SECRET',
 
   ALLOW_ORIGIN = 'ALLOW_ORIGIN',
+
+  DS_BASE_URL = 'DS_BASE_URL'
 }
 
 export const validationSchema = Joi.object({
@@ -37,5 +39,7 @@ export const validationSchema = Joi.object({
   [Env.POSTGRES_SCHEMA]: Joi.string().required(),
   [Env.POSTGRES_SYNC]: Joi.boolean().required(),
   [Env.POSTGRES_SSL]: Joi.boolean().required(),
+
+  [Env.DS_BASE_URL]: Joi.string().required(),
 
 });

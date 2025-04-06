@@ -1,22 +1,48 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { Test, TestingModule } from "@nestjs/testing";
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
 
-describe('AppController', () => {
+describe("AppController", () => {
   let appController: AppController;
+  let appService: AppService;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        {
+          provide: AppService,
+          useValue: {
+            getHealhCheck: jest.fn().mockResolvedValue({
+              status: 200,
+              message: "Health check passed",
+            }),
+          },
+        },
+      ],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    appController = moduleRef.get<AppController>(AppController);
+    appService = moduleRef.get<AppService>(AppService);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  it("should be defined", () => {
+    expect(appController).toBeDefined();
+  });
+
+  it("should return health check response", async () => {
+    const result = await appController.healthCheck();
+    expect(result).toEqual({
+      message: "Good Health.",
+      data: {
+        status: 200,
+        message: "Health check passed",
+      },
     });
+  });
+
+  it("should call getHealhCheck from AppService", async () => {
+    await appController.healthCheck();
+    expect(appService.getHealhCheck).toHaveBeenCalled();
   });
 });

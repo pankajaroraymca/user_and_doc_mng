@@ -1,5 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 import { AppService } from "./app.service";
+import { Public } from "./common/decorators/public/public.decorator";
 
 @Controller()
 export class AppController {
@@ -8,6 +9,7 @@ export class AppController {
     private appService: AppService
   ) { }
 
+  @Public()
   @Get('health')
   async healthCheck() {
 
