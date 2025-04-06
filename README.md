@@ -31,7 +31,7 @@ A comprehensive NestJS application for managing users and documents with AI-powe
 
 1. Clone the repository:
    ```bash
-   git clone https://gitlab.com/pankajaroraymca/user_and_doc_mng.git
+   git clone https://github.com/pankajaroraymca/user_and_doc_mng.git
    cd user_and_doc_mng
    ```
 
