@@ -17,13 +17,12 @@ A comprehensive NestJS application for managing users and documents with AI-powe
 - **Database**: PostgreSQL with TypeORM
 - **Authentication**: JWT
 - **Validation**: Class-validator and Joi
-- **Logging**: Winston with daily rotation
 - **File Handling**: Multer
 - **HTTP Client**: Axios
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v18)
 - PostgreSQL
 - External AI service endpoint (for document analysis)
 
@@ -86,6 +85,9 @@ npm run start
 
 The API is versioned and all endpoints are prefixed with `/v1/api`.
 
+### HEALTH CHECK
+- `GET /v1/api/health` - Health Check
+
 ### Authentication
 - `POST /v1/api/auth/login` - User login
 - `POST /v1/api/auth/register` - User registration
@@ -106,11 +108,12 @@ The API is versioned and all endpoints are prefixed with `/v1/api`.
 - `GET /v1/api/doc` - Get all documents
 - `GET /v1/api/doc/:id` - Get document by ID
 - `DELETE /v1/api/doc/:id` - Delete a document
+- `PATCH /v1/api/doc/:id/inactivate` - Inactivate the file in case of multiple file uploads.
 
 ### GenAI Analysis
 - `POST /v1/api/genai/process` - Process a document with AI
 - `POST /v1/api/genai/webhook` - ingest the result from genai
-- `GET /v1/api/genai/response/:requestId` - Get AI analysis results
+- `GET /v1/api/genai/:requestId` - Get AI analysis results
 
 ## User Roles
 
@@ -155,22 +158,5 @@ user_and_doc_mng/
 ```bash
 # Unit tests
 npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the [UNLICENSED] License.

@@ -179,14 +179,17 @@ export class GenAIService extends BaseService<GenAIEntity> {
      */
     async getGenAIResponse(requestId: string) {
 
+        this.loggerService.log('Genai response request started', { requestId })
         // CHECK REQUEST ID IS VALID OR NOT
         const isRequestValid = await this.findOne({ where: { request_id: requestId, status: GENAI_ANALYSIS_STATUS.SUCCESS }, select: ['request_id', 'response', 'status'] })
 
         if (!isRequestValid) {
+            this.loggerService.log('Genai response request not found', { requestId })
             throw new BadRequestException('Request not found')
         }
 
         const fileMetadata = await this.docResposiotry.find({ where: { unified_id: requestId, status: FILE_UPLOAD_STATUS.ACTIVE }, select: ['file_name', 'actual_file_name', 'file_path', 'file_size', 'file_type', 'created_at'] })
+        this.loggerService.log('Genai response request file metadata', { requestId })
 
         return { ...isRequestValid, file_metadata: fileMetadata }
 

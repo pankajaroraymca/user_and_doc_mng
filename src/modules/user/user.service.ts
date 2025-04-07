@@ -39,6 +39,8 @@ export class UserService extends BaseService<User> {
    */
   async createUser(createUserDto: CreateUserDto) {
 
+    this.logger.log('Creating user');
+
     // CHECK IF THE SAME USER EXIST WITH EITHER USERNAME, EMAIL
     const isUserExist = await this.userRepository.createQueryBuilder('user')
       .where('user.email = :email', { email: createUserDto.email })
@@ -80,6 +82,8 @@ export class UserService extends BaseService<User> {
 */
   async findAllUsers(search: string, limit: number = 250, page: number = 1) {
 
+    this.logger.log('Fetching all users');
+
     // GET THE VALID LIMIT AND OFFSET NUMBER
     const { take, skip } = this.helperService.getValidPagination(limit, page);
 
@@ -98,6 +102,9 @@ export class UserService extends BaseService<User> {
 
     // APPLY THE SEARCH CRITERIA
     if (search) {
+
+      this.logger.log('Applying search filter');
+
       queryBuilder
         .andWhere(
           new Brackets((qb) => {
@@ -117,6 +124,8 @@ export class UserService extends BaseService<User> {
     const data = await queryBuilder.take(take).skip(skip).getMany();
     const count = await queryBuilder.getCount();
 
+    this.logger.log('Fetched all users successfully');
+
     return {
       data, count
     }
@@ -134,23 +143,30 @@ export class UserService extends BaseService<User> {
  */
   async findUserById(id: string) {
 
+    this.logger.log('Fetching user by ID');
+
     const isUserExist = await this.userRepository.findOne({
       where: { id: id },
       select: ['id', 'first_name', 'last_name', 'email', 'mobile_number', 'username', 'role', 'is_active']
     })
 
     if (!isUserExist) {
+      this.logger.error('No user found with this ID');
       throw new BadRequestException('No user found with this id')
     }
 
+    this.logger.log('Fetched user by ID successfully');
     return isUserExist
 
   }
 
   async findWithCustomIdentifiers(body: FindUserWithCustomIdsDto) {
+
+    this.logger.log('Fetching user with custom identifiers');
     const { email, mobile_number, username } = body;
 
     if (!email && !mobile_number && !username) {
+      this.logger.error('At least one field (email, mobile, or username) is required');
       throw new BadRequestException('At least one field (email, mobile, or username) is required');
     }
 
@@ -173,9 +189,11 @@ export class UserService extends BaseService<User> {
     });
 
     if (!user) {
+      this.logger.error('User not found');
       throw new BadRequestException('User not found');
     }
 
+    this.logger.log('Fetched user with custom identifiers successfully');
     return user;
   }
 
@@ -196,9 +214,12 @@ export class UserService extends BaseService<User> {
    */
   async updateUser(userId: string, updateUserDto: UpdateUserDto | ChangeRoleDto) {
 
+    this.logger.log('Updating user');
+
     // CHECK IF THE USER EXIST
     const user = this.find({ where: { id: userId } });
     if (!user) {
+      this.logger.error('User not found');
       throw new NotFoundException('User not found');
     }
 
@@ -206,6 +227,7 @@ export class UserService extends BaseService<User> {
 
     // CHECK IF ONLY ONE UNIQUE FIELD IS PASSED
     if (uniqueFields.length > 1) {
+      this.logger.error('Only one unique identifier can be updated at a time');
       throw new BadRequestException('Only one unique identifier can be updated at a time');
     }
 
@@ -226,16 +248,19 @@ export class UserService extends BaseService<User> {
 
     // CHECK IF THE USER EXIST WITH SAME DETAILS
     if (isUserExist && uniqueFields.length > 0) {
+      this.logger.error('User already exist with same details');
       throw new BadRequestException('User already exist with same details')
     }
 
     // IF THERE IS ONLY 1 USER IN SYSTEM, WE CAN'T CHANGE THE ROLE FROM ADMIN TO ANY OTHER ROLE
     const totalUserRegisteredCount = await this.userRepository.count()
     if (totalUserRegisteredCount === 1 && updateUserDto['role'] !== USER_ROLES.ADMIN) {
+      this.logger.error('You can not change the role of the only user in the system');
       throw new BadRequestException('You can not change the role of the only user in the system');
     }
 
     await this.update(userId, updateUserDto);
+    this.logger.log('User updated successfully');
   }
 
   /**
@@ -248,21 +273,26 @@ export class UserService extends BaseService<User> {
    */
   async changePassword(userId: string, body: ChangePasswordDto) {
 
+    this.logger.log('Changing user password');
+
     // EXTRACT THE OLD AND NEW PASSWORDS FROM THE REQUEST BODY
     const { old_password, new_password } = body;
 
     // CHECK IF THE USER EXIST
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
+      this.logger.error('User not found');
       throw new BadRequestException('User not found');
     }
 
     // CHECK IF THE OLD PASSWORD IS CORRECT
     const updatedPassword = await this.authService.verifyAndUpdatePassword(old_password, user.password, new_password);
+    this.logger.log('Old password verified successfully');
 
     // UPDATE THE USER'S PASSWORD
     user.password = updatedPassword;
     await this.userRepository.save(user)
+    this.logger.log('User password changed successfully');
   }
 
   /**
@@ -271,10 +301,13 @@ export class UserService extends BaseService<User> {
   * @returns Number of deleted users
   */
   async bulkDeleteUsers(body: BulkDeleteUsersDto): Promise<number> {
+
+    this.logger.log('Bulk deleting users');
     // Find users whose UUIDs exist in the database
     const existingUsers = await this.find({ where: { id: In(body.uuids) } });
 
     if (existingUsers.data.length === 0) {
+      this.logger.log('No users found to delete');
       return 0; // No users found, nothing to delete
     }
 
@@ -284,6 +317,7 @@ export class UserService extends BaseService<User> {
     // Perform bulk deletion for existing UUIDs
     const deleteResult = await this.delete({ id: In(existingUuids) });
 
+    this.logger.log('Users deleted successfully');
     return deleteResult.affected || 0; // Return the number of deleted users
   }
 
@@ -292,8 +326,13 @@ export class UserService extends BaseService<User> {
    * @param user User data
    */
   private validateIdentifiers(user: CreateUserDto): void {
+
+    this.logger.log('Validating user identifiers');
+    // Check if at least one identifier (email, mobile number) is provided
     const identifiers = [user.email, user.mobile_number].filter(Boolean);
+
     if (identifiers.length === 0) {
+      this.logger.error('At least one identifier (email, mobile number) is required');
       throw new BadRequestException('At least one identifier (email, mobileNumber) is required');
     }
   }
@@ -322,6 +361,8 @@ export class UserService extends BaseService<User> {
    * - Default values for `first_name` and `last_name` are set to "Guest" and "User" respectively if not provided.
    */
   async bulkRegisterUsers(users: CreateUserDto[]): Promise<{ registeredUsers: User[], skippedUsers: CreateUserDto[] }> {
+
+    this.logger.log('Bulk registering users');
 
     // EXTRACT IDENTIFIERS FROM USERS
     const emails = users.map((user) => user.email).filter(Boolean);
@@ -353,7 +394,7 @@ export class UserService extends BaseService<User> {
     const skippedUsers = [];
 
     for (const user of users) {
-     
+
       // VALIDATE AT LEAST ONE IDENTIFIER IS PROVIDED
       this.validateIdentifiers(user);
 
@@ -393,6 +434,7 @@ export class UserService extends BaseService<User> {
 
     // INSERT NEW USERS
     await this.batchInsertOrUpdate(usersToInsert);
+    this.logger.log('Users registered successfully');
 
     return {
       registeredUsers: response,
